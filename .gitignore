@@ -1,0 +1,14 @@
+# Large artifacts (do not commit)
+checkpoints/
+checkpoint/
+output/
+outputs/
+data/
+*.npy
+*.npz
+*.ckpt*
+*.pth
+*.pt
+*.bin
+*.mp4
+*.gif
