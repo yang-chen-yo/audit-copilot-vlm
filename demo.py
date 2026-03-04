@@ -6,7 +6,6 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +17,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     https://www.apache.org/licenses/LICENSE-2.0
 
 # Unless required by applicable law or agreed to in writing, software
@@ -68,7 +67,6 @@ _MAX_NUM_CLS = flags.DEFINE_integer('max_num_classes', 91,
                                     'Max number of classes users can input.')
 _MIN_SCORE_THRESH = flags.DEFINE_float('min_score_thresh', 0.2,
                                        'Min score threshold.')
-
 
 def main(argv):
   if len(argv) > 1:
@@ -164,16 +162,18 @@ def main(argv):
       output['detection_classes'].astype(np.int32), axis=0
   )[:_num_det]
 
-  img_h, img_w = np_image.shape[:2]
+  # 用 image_info 取得縮放後尺寸，與 detection_boxes 座標空間一致
+  _image_info = labels['image_info']
+  _img_h = int(float(_image_info[0, 0, 0]) * float(_image_info[0, 2, 0]))
+  _img_w = int(float(_image_info[0, 0, 1]) * float(_image_info[0, 2, 1]))
 
   class_info = audit_report.summarize_detections(
       detection_boxes=_boxes,
       detection_scores=_scores,
       detection_classes=_classes,
       id_mapping=id_mapping,
-      img_h=img_h,
-      img_w=img_w,
-      min_score_thresh=_MIN_SCORE_THRESH.value,
+      img_h=_img_h,
+      img_w=_img_w,
   )
 
   natural_summary = audit_report.generate_natural_summary(
