@@ -6,7 +6,6 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,14 +43,31 @@ def _position_phrase(box, img_h: int, img_w: int) -> str:
   cy = (y1 + y2) / 2
   cx = (x1 + x2) / 2
 
-  vert = '畫面上方' if cy < img_h / 3 else (
-      '畫面下方' if cy > 2 * img_h / 3 else '畫面中央'
-  )
-  horiz = '左側' if cx < img_w / 3 else (
-      '右側' if cx > 2 * img_w / 3 else ''
-  )
+  # 垂直分三區
+  if cy < img_h / 3:
+    vert = '上方'
+  elif cy > 2 * img_h / 3:
+    vert = '下方'
+  else:
+    vert = '中間'
 
-  return f'{vert}{horiz}'.strip()
+  # 水平分三區
+  if cx < img_w / 3:
+    horiz = '左側'
+  elif cx > 2 * img_w / 3:
+    horiz = '右側'
+  else:
+    horiz = '中間'
+
+  # 組合成自然語言
+  if vert == '中間' and horiz == '中間':
+    return '畫面正中央'
+  elif horiz == '中間':
+    return f'畫面{vert}中間'
+  elif vert == '中間':
+    return f'畫面{horiz}'
+  else:
+    return f'畫面{vert}{horiz}'
 
 
 # ── 數量語言映射 ────────────────────────────────────────────
@@ -73,18 +89,20 @@ def summarize_detections(
     id_mapping: dict,
     img_h: int,
     img_w: int,
-    min_score_thresh: float = 0.2,
 ) -> dict:
-  """輸入原始偵測結果，回傳整理後的 class_info 字典。
+  """輸入已過濾的偵測結果，回傳整理後的 class_info 字典。
+
+  注意：不在這裡做信心值過濾，請在呼叫前先由 demo.py 的
+  --min_score_thresh 控制，或使用 num_detections 截斷。
 
   Args:
-    detection_boxes: shape (N, 4) 的 numpy array，格式為 [y1, x1, y2, x2]。
+    detection_boxes: shape (N, 4) 的 numpy array，格式為 [y1, x1, y2, x2]，
+      座標對應縮放後的圖片空間（與 image_info 的 crop 尺寸一致）。
     detection_scores: shape (N,) 的 numpy array，偵測信心分數。
     detection_classes: shape (N,) 的 numpy array，偵測類別 id（int）。
     id_mapping: dict，將 class id 對應到類別名稱字串。
-    img_h: 原始圖片高度（像素）。
-    img_w: 原始圖片寬度（像素）。
-    min_score_thresh: 最低信心分數閾值，低於此值的偵測結果會被過濾。
+    img_h: 縮放後圖片的高度（crop_height），與 detection_boxes 座標空間一致。
+    img_w: 縮放後圖片的寬度（crop_width），與 detection_boxes 座標空間一致。
 
   Returns:
     class_info: dict，結構為：
@@ -92,7 +110,7 @@ def summarize_detections(
         'helmet': {
             'count': 2,
             'best_score': 0.87,
-            'best_position': '畫面中央左側',
+            'best_position': '畫面上方左側',
             'confidence_phrase': '明確偵測到',
         },
         ...
@@ -102,8 +120,6 @@ def summarize_detections(
 
   for cls_id, score, box in zip(detection_classes, detection_scores,
                                 detection_boxes):
-    if score < min_score_thresh:
-      continue
     cls_name = id_mapping.get(int(cls_id), f'class_{cls_id}')
     if cls_name in ('background', 'empty'):
       continue
@@ -166,8 +182,7 @@ def generate_natural_summary(
     )
     return '\n'.join(lines)
 
-  # 主體：逐類別產生自然語言句子
-  detail_sentences = []
+  # 主體：逐類別產生自然語言句子（每類別獨立一行）
   for cls_name, info in class_info.items():
     count_str = _count_phrase(info['count'], cls_name)
     conf_phrase = info['confidence_phrase']
@@ -175,32 +190,19 @@ def generate_natural_summary(
 
     sentence = f'系統{conf_phrase} {count_str}'
     if position_str:
-      sentence += f'，主要分布於{position_str}'
+      sentence += f'，位於{position_str}'
     sentence += '。'
-    detail_sentences.append(sentence)
+    lines.append(sentence)
 
-  lines.append('　'.join(detail_sentences))
   lines.append('')
 
-  # 結尾：整體評估語句（根據偵測結果自動調整語氣）
+  # 結尾：整體評估語句
   total_items = sum(v['count'] for v in class_info.values())
-  low_conf_items = [
-      k for k, v in class_info.items() if v['best_score'] < 0.5
-  ]
 
-  if total_items == 0:
-    assessment = '本次稽核結果正常，未發現明顯異常。'
-  elif low_conf_items:
-    items_str = '、'.join(low_conf_items)
-    assessment = (
-        f'整體偵測結果可信度尚可，但「{items_str}」的偵測信心較低，'
-        '建議補拍近距離或角度更清晰的照片以利確認。'
-    )
-  else:
-    assessment = (
-        f'本次共偵測到 {len(class_info)} 類目標（{total_items} 件），'
-        '偵測結果信心度良好，請對照框選圖片進一步確認細節。'
-    )
+  assessment = (
+      f'本次共偵測到 {len(class_info)} 類目標（{total_items} 件），'
+      '請對照框選圖片進一步確認細節。'
+  )
 
   lines.append(f'【稽核評估】{assessment}')
 
