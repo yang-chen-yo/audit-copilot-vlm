@@ -38,10 +38,12 @@ F-VLM models.
 
 from collections.abc import Sequence
 import functools
+import os
 
 from absl import app
 from absl import flags
 from absl import logging
+from demo_utils import audit_report
 from demo_utils import input_utils
 from demo_utils import vis_utils
 import jax
@@ -153,6 +155,50 @@ def main(argv):
   pil_vis_image = Image.fromarray(vis_image, mode='RGB')
   pil_vis_image.save(output_image_path)
   logging.info('Completed saving the output image at %s.', output_image_path)
+
+  # ── 後處理：產生自然語言稽核摘要 ───────────────────────────
+  _num_det = int(np.squeeze(output['num_detections']))
+  _boxes = np.squeeze(output['detection_boxes'], axis=0)[:_num_det]
+  _scores = np.squeeze(output['detection_scores'], axis=0)[:_num_det]
+  _classes = np.squeeze(
+      output['detection_classes'].astype(np.int32), axis=0
+  )[:_num_det]
+
+  img_h, img_w = np_image.shape[:2]
+
+  class_info = audit_report.summarize_detections(
+      detection_boxes=_boxes,
+      detection_scores=_scores,
+      detection_classes=_classes,
+      id_mapping=id_mapping,
+      img_h=img_h,
+      img_w=img_w,
+      min_score_thresh=_MIN_SCORE_THRESH.value,
+  )
+
+  natural_summary = audit_report.generate_natural_summary(
+      class_info=class_info,
+      image_name=_DEMO_IMAGE_NAME.value,
+  )
+
+  print('\n' + '=' * 50)
+  print(natural_summary)
+  print('=' * 50 + '\n')
+
+  base_stem = (
+      os.path.splitext(_DEMO_IMAGE_NAME.value)[0]
+      + f'_{_MODEL.value.replace("resnet_", "r")}'
+  )
+  audit_report.save_report(
+      class_info=class_info,
+      natural_summary=natural_summary,
+      image_name=_DEMO_IMAGE_NAME.value,
+      model_name=_MODEL.value,
+      output_dir='./output',
+      file_stem=base_stem,
+  )
+  logging.info('稽核報表已儲存至 ./output/%s_report.json', base_stem)
+  logging.info('稽核摘要已儲存至 ./output/%s_summary.txt', base_stem)
 
 
 if __name__ == '__main__':
