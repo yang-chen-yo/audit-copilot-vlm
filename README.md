@@ -22,6 +22,9 @@ wget "https://storage.googleapis.com/cloud-tpu-checkpoints/detection/projects/fv
 ```
 We recommend users to run the above commands in the checkpoints directory.
 
+```
+python demo.py --demo_image_name="7.jpg" --category_name_string="person,hard hat,safety vest" --template construction_site
+```
 ---
 
 ## 1. 主題
