@@ -1,6 +1,10 @@
 {
   "name": "戶外建築工地工安",
   "categories": ["person", "hard hat", "safety vest"],
+  "ppe_aliases": {
+    "hard hat": ["hard hat", "hardhat", "helmet", "safety helmet", "construction helmet", "hard-hat"],
+    "safety vest": ["safety vest", "vest", "hi-vis vest", "hi vis vest", "high visibility vest", "reflective vest", "orange vest", "yellow vest", "fluorescent vest", "high-vis jacket", "hi-vis jacket", "reflective jacket", "work vest"]
+  },
   "compliance_rules": [
     {
       "target": "person",
