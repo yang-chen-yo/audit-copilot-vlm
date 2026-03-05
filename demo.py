@@ -6,7 +6,6 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +17,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
+#
 #     https://www.apache.org/licenses/LICENSE-2.0
 
 # Unless required by applicable law or agreed to in writing, software
@@ -38,10 +37,12 @@ F-VLM models.
 
 from collections.abc import Sequence
 import functools
+import os
 
 from absl import app
 from absl import flags
 from absl import logging
+from demo_utils import audit_report
 from demo_utils import input_utils
 from demo_utils import vis_utils
 import jax
@@ -66,7 +67,6 @@ _MAX_NUM_CLS = flags.DEFINE_integer('max_num_classes', 91,
                                     'Max number of classes users can input.')
 _MIN_SCORE_THRESH = flags.DEFINE_float('min_score_thresh', 0.2,
                                        'Min score threshold.')
-
 
 def main(argv):
   if len(argv) > 1:
@@ -153,6 +153,52 @@ def main(argv):
   pil_vis_image = Image.fromarray(vis_image, mode='RGB')
   pil_vis_image.save(output_image_path)
   logging.info('Completed saving the output image at %s.', output_image_path)
+
+  # ── 後處理：產生自然語言稽核摘要 ───────────────────────────
+  _num_det = int(np.squeeze(output['num_detections']))
+  _boxes = np.squeeze(output['detection_boxes'], axis=0)[:_num_det]
+  _scores = np.squeeze(output['detection_scores'], axis=0)[:_num_det]
+  _classes = np.squeeze(
+      output['detection_classes'].astype(np.int32), axis=0
+  )[:_num_det]
+
+  # 用 image_info 取得縮放後尺寸，與 detection_boxes 座標空間一致
+  _image_info = labels['image_info']
+  _img_h = int(float(_image_info[0, 0, 0]) * float(_image_info[0, 2, 0]))
+  _img_w = int(float(_image_info[0, 0, 1]) * float(_image_info[0, 2, 1]))
+
+  class_info = audit_report.summarize_detections(
+      detection_boxes=_boxes,
+      detection_scores=_scores,
+      detection_classes=_classes,
+      id_mapping=id_mapping,
+      img_h=_img_h,
+      img_w=_img_w,
+  )
+
+  natural_summary = audit_report.generate_natural_summary(
+      class_info=class_info,
+      image_name=_DEMO_IMAGE_NAME.value,
+  )
+
+  print('\n' + '=' * 50)
+  print(natural_summary)
+  print('=' * 50 + '\n')
+
+  base_stem = (
+      os.path.splitext(_DEMO_IMAGE_NAME.value)[0]
+      + f'_{_MODEL.value.replace("resnet_", "r")}'
+  )
+  audit_report.save_report(
+      class_info=class_info,
+      natural_summary=natural_summary,
+      image_name=_DEMO_IMAGE_NAME.value,
+      model_name=_MODEL.value,
+      output_dir='./output',
+      file_stem=base_stem,
+  )
+  logging.info('稽核報表已儲存至 ./output/%s_report.json', base_stem)
+  logging.info('稽核摘要已儲存至 ./output/%s_summary.txt', base_stem)
 
 
 if __name__ == '__main__':
