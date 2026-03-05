@@ -106,6 +106,7 @@ def check_compliance(
     rule = rules[0]  # 目前只處理第一條規則
     required_ppe = rule.get('required_ppe', [])
     ppe_regions = rule.get('ppe_regions', {})
+    ppe_aliases = template.get('ppe_aliases', {})  # 新增：讀取別名
 
     person_boxes = raw_boxes.get('person', [])
     if not person_boxes:
@@ -122,7 +123,13 @@ def check_compliance(
     for i, person_box in enumerate(person_boxes):
         missing = []
         for ppe_name in required_ppe:
-            ppe_boxes = raw_boxes.get(ppe_name, [])
+            # 合併主類別名稱 + 所有別名的 box（確保主名稱一定被包含）
+            aliases = ppe_aliases.get(ppe_name, [ppe_name])
+            if ppe_name not in aliases:
+                aliases = [ppe_name] + list(aliases)
+            ppe_boxes = []
+            for alias in aliases:
+                ppe_boxes.extend(raw_boxes.get(alias, []))
             region = ppe_regions.get(ppe_name, 'body')
             found = any(
                 _is_ppe_near_person(person_box, pb, region)
