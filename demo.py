@@ -162,7 +162,8 @@ def main(argv):
       output['detection_classes'].astype(np.int32), axis=0
   )[:_num_det]
 
-  # 過濾低信心偵測，與圖上畫的 box 數量保持一致
+
+  # 用 min_score_thresh 過濾，與圖上畫的 box 數量一致
   _mask = _scores >= _MIN_SCORE_THRESH.value
   _boxes = _boxes[_mask]
   _scores = _scores[_mask]
