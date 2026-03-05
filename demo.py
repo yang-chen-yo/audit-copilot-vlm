@@ -162,6 +162,7 @@ def main(argv):
       output['detection_classes'].astype(np.int32), axis=0
   )[:_num_det]
 
+
   # 用 min_score_thresh 過濾，與圖上畫的 box 數量一致
   _mask = _scores >= _MIN_SCORE_THRESH.value
   _boxes = _boxes[_mask]

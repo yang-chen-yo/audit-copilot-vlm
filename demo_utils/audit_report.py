@@ -196,13 +196,21 @@ def generate_natural_summary(
     if instances:
       positions = [inst['position'] for inst in instances]
       unique_positions = list(dict.fromkeys(positions))  # 保持順序去重
-      if len(unique_positions) == 1:
-        if len(positions) == 1:
-          sentence += f'，位於{unique_positions[0]}'
-        else:
-          sentence += f'，均位於{unique_positions[0]}'
-      else:
+      if len(positions) == 1:
+        # 只有 1 件：直接說位置
+        sentence += f'，位於{unique_positions[0]}'
+      elif len(unique_positions) == 1:
+        # 多件但都在同一區
+        sentence += f'，均位於{unique_positions[0]}'
+      elif len(positions) <= 3:
+        # 少量（2–3 件）且位置不同：列出來還合理
         sentence += f'，分別位於{"、".join(unique_positions)}'
+      elif len(unique_positions) <= 2:
+        # 數量多但只分布在 1–2 個區域
+        sentence += f'，主要分布於{"與".join(unique_positions)}'
+      else:
+        # 數量多且分散：用統計式描述
+        sentence += '，分散於畫面各處'
     sentence += '。'
     lines.append(sentence)
 
