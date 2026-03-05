@@ -67,6 +67,10 @@ _MAX_NUM_CLS = flags.DEFINE_integer('max_num_classes', 91,
                                     'Max number of classes users can input.')
 _MIN_SCORE_THRESH = flags.DEFINE_float('min_score_thresh', 0.2,
                                        'Min score threshold.')
+_TEMPLATE = flags.DEFINE_string(
+    'template', '',
+    'Template name under templates/ (e.g. construction_site). '
+    'If set, runs compliance check instead of plain detection.')
 
 def main(argv):
   if len(argv) > 1:
@@ -87,6 +91,15 @@ def main(argv):
   if _CATEGORY_NAME_STRING.value:
     # Parse string.
     categories = _CATEGORY_NAME_STRING.value.split(',')
+  elif _TEMPLATE.value:
+    # Load categories from template when no explicit category string given.
+    from demo_utils import compliance_checker
+    _template_for_categories = compliance_checker.load_template(_TEMPLATE.value)
+    categories = _template_for_categories.get('categories', [])
+    if not categories:
+      raise ValueError(
+          f'Template "{_TEMPLATE.value}" has no categories defined.'
+      )
   else:
     # Use default text prompts.
     try:
@@ -162,6 +175,12 @@ def main(argv):
       output['detection_classes'].astype(np.int32), axis=0
   )[:_num_det]
 
+  # 過濾低信心偵測，與圖上畫的 box 數量保持一致
+  _mask = _scores >= _MIN_SCORE_THRESH.value
+  _boxes = _boxes[_mask]
+  _scores = _scores[_mask]
+  _classes = _classes[_mask]
+
   # 用 image_info 取得縮放後尺寸，與 detection_boxes 座標空間一致
   _image_info = labels['image_info']
   _img_h = int(float(_image_info[0, 0, 0]) * float(_image_info[0, 2, 0]))
@@ -176,10 +195,43 @@ def main(argv):
       img_w=_img_w,
   )
 
-  natural_summary = audit_report.generate_natural_summary(
-      class_info=class_info,
-      image_name=_DEMO_IMAGE_NAME.value,
-  )
+  if _TEMPLATE.value:
+    # 合規稽核模式
+    from demo_utils import compliance_checker
+    template = compliance_checker.load_template(_TEMPLATE.value)
+
+    # 整理每個類別的 raw box list
+    raw_boxes = {}
+    for cls_id, box in zip(_classes, _boxes):
+      cls_name = id_mapping.get(int(cls_id), f'class_{cls_id}')
+      if cls_name in ('background', 'empty'):
+        continue
+      if cls_name.startswith('class_'):
+        logging.warning('Unknown class ID %d encountered during compliance check.', cls_id)
+      if cls_name not in raw_boxes:
+        raw_boxes[cls_name] = []
+      raw_boxes[cls_name].append(box)
+
+    compliance_result = compliance_checker.check_compliance(
+        class_info=class_info,
+        template=template,
+        raw_boxes=raw_boxes,
+    )
+
+    natural_summary = compliance_checker.generate_compliance_summary(
+        compliance_result=compliance_result,
+        template=template,
+        class_info=class_info,
+        image_name=_DEMO_IMAGE_NAME.value,
+        img_h=_img_h,
+        img_w=_img_w,
+    )
+  else:
+    # 一般物件偵測模式（原本邏輯）
+    natural_summary = audit_report.generate_natural_summary(
+        class_info=class_info,
+        image_name=_DEMO_IMAGE_NAME.value,
+    )
 
   print('\n' + '=' * 50)
   print(natural_summary)
