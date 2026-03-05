@@ -120,6 +120,9 @@ def check_compliance(
     violations = []
     compliant_count = 0
 
+    # 初始化 PPE 統計
+    ppe_stats = {ppe_name: 0 for ppe_name in required_ppe}
+
     for i, person_box in enumerate(person_boxes):
         missing = []
         for ppe_name in required_ppe:
@@ -135,7 +138,9 @@ def check_compliance(
                 _is_ppe_near_person(person_box, pb, region)
                 for pb in ppe_boxes
             )
-            if not found:
+            if found:
+                ppe_stats[ppe_name] += 1
+            else:
                 missing.append(ppe_name)
 
         if missing:
@@ -153,6 +158,7 @@ def check_compliance(
         'compliant': compliant_count,
         'violations': violations,
         'compliance_rate': compliant_count / total if total > 0 else 1.0,
+        'ppe_stats': ppe_stats,  # 新增：每種 PPE 配戴人數
     }
 
 
@@ -197,6 +203,17 @@ def generate_compliance_summary(
     lines.append(f'  ✅ {compliant} 人 已完整配戴 PPE')
     lines.append(f'  ❌ {len(violations)} 人 PPE 配戴不符規定')
     lines.append('')
+
+    # PPE 配戴統計
+    ppe_stats = compliance_result.get('ppe_stats', {})
+    rules = template.get('compliance_rules', [])
+    required_ppe = rules[0].get('required_ppe', []) if rules else []
+    if ppe_stats and required_ppe:
+        lines.append('【PPE 配戴統計】')
+        for ppe_name in required_ppe:
+            count = ppe_stats.get(ppe_name, 0)
+            lines.append(f'  · {ppe_name}：{count} 人配戴 / {total} 人')
+        lines.append('')
 
     if violations:
         lines.append('【違規明細】')
