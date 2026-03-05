@@ -110,8 +110,11 @@ def summarize_detections(
         'helmet': {
             'count': 2,
             'best_score': 0.87,
-            'best_position': '畫面上方左側',
             'confidence_phrase': '明確偵測到',
+            'instances': [
+                {'score': 0.87, 'position': '畫面上方左側'},
+                {'score': 0.72, 'position': '畫面右側'},
+            ],
         },
         ...
       }
@@ -128,16 +131,17 @@ def summarize_detections(
       class_info[cls_name] = {
           'count': 0,
           'best_score': 0.0,
-          'best_position': '',
           'confidence_phrase': '',
+          'instances': [],
       }
 
     class_info[cls_name]['count'] += 1
+    class_info[cls_name]['instances'].append({
+        'score': float(score),
+        'position': _position_phrase(box, img_h, img_w),
+    })
     if score > class_info[cls_name]['best_score']:
       class_info[cls_name]['best_score'] = float(score)
-      class_info[cls_name]['best_position'] = _position_phrase(
-          box, img_h, img_w
-      )
       class_info[cls_name]['confidence_phrase'] = _confidence_phrase(
           float(score)
       )
@@ -186,11 +190,19 @@ def generate_natural_summary(
   for cls_name, info in class_info.items():
     count_str = _count_phrase(info['count'], cls_name)
     conf_phrase = info['confidence_phrase']
-    position_str = info['best_position']
 
     sentence = f'系統{conf_phrase} {count_str}'
-    if position_str:
-      sentence += f'，位於{position_str}'
+    instances = info.get('instances', [])
+    if instances:
+      positions = [inst['position'] for inst in instances]
+      unique_positions = list(dict.fromkeys(positions))  # 保持順序去重
+      if len(unique_positions) == 1:
+        if len(positions) == 1:
+          sentence += f'，位於{unique_positions[0]}'
+        else:
+          sentence += f'，均位於{unique_positions[0]}'
+      else:
+        sentence += f'，分別位於{"、".join(unique_positions)}'
     sentence += '。'
     lines.append(sentence)
 
