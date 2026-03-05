@@ -162,6 +162,12 @@ def main(argv):
       output['detection_classes'].astype(np.int32), axis=0
   )[:_num_det]
 
+  # 用 min_score_thresh 過濾，與圖上畫的 box 數量一致
+  _mask = _scores >= _MIN_SCORE_THRESH.value
+  _boxes = _boxes[_mask]
+  _scores = _scores[_mask]
+  _classes = _classes[_mask]
+
   # 用 image_info 取得縮放後尺寸，與 detection_boxes 座標空間一致
   _image_info = labels['image_info']
   _img_h = int(float(_image_info[0, 0, 0]) * float(_image_info[0, 2, 0]))
