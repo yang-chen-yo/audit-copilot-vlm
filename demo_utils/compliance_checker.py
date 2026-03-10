@@ -5,12 +5,23 @@
 
 """工安合規檢查模組。
 
-根據場域模板，對每個偵測到的 person 判斷是否配戴了必要的 PPE。
+完全由 JSON 的 compliance_rules 驅動，不寫死任何場域邏輯：
+
+  compliance_rules[i].target        → 要檢查的人員類別
+  compliance_rules[i].required_ppe  → 必須配戴的裝備清單
+  compliance_rules[i].ppe_regions   → 每個裝備對應的身體區域
+  compliance_rules[i].violation_msg → 違規時的提示文字
+
+新場域只需新增 JSON，程式碼完全不用動。
 """
 
 import json
 import os
 
+
+# ---------------------------------------------------------------------------
+# 模板載入
+# ---------------------------------------------------------------------------
 
 def load_template(template_name: str, templates_dir: str = './templates') -> dict:
     """載入場域模板 JSON。"""
@@ -25,6 +36,10 @@ def load_template(template_name: str, templates_dir: str = './templates') -> dic
         ) from None
 
 
+# ---------------------------------------------------------------------------
+# 共用工具
+# ---------------------------------------------------------------------------
+
 def _box_center(box):
     """回傳 box 的中心點 (cy, cx)，box 格式為 [y1, x1, y2, x2]。"""
     y1, x1, y2, x2 = box
@@ -34,13 +49,10 @@ def _box_center(box):
 def _is_ppe_near_person(person_box, ppe_box, ppe_region: str) -> bool:
     """判斷 PPE box 是否在 person box 的對應身體區域內。
 
-    Args:
-        person_box: [y1, x1, y2, x2]
-        ppe_box: [y1, x1, y2, x2]
-        ppe_region: 'head' 或 'torso'
-
-    Returns:
-        True 如果 PPE 在對應區域內
+    ppe_region 對應 JSON ppe_regions 的值：
+      'head'  → 安全帽，person box 上方 40%
+      'torso' → 反光背心，person box 中間 50%
+      其他    → 整個 person box（通用）
     """
     py1, px1, py2, px2 = person_box
     person_h = py2 - py1
@@ -48,119 +60,139 @@ def _is_ppe_near_person(person_box, ppe_box, ppe_region: str) -> bool:
 
     ppe_cy, ppe_cx = _box_center(ppe_box)
 
-    # 水平方向：PPE 中心必須在 person box 左右範圍內（稍微放寬 20%）
+    # 水平：PPE 中心在 person 左右範圍內（放寬 20%）
     margin_x = person_w * 0.2
     if not (px1 - margin_x <= ppe_cx <= px2 + margin_x):
         return False
 
-    # 垂直方向：依身體部位判斷
+    # 垂直：依 ppe_region 決定對應範圍
     if ppe_region == 'head':
-        # 安全帽：PPE 中心在 person box 上方 40% 範圍內
-        region_y1 = py1 - person_h * 0.1  # 稍微往上延伸（帽子可能超出 person box）
+        region_y1 = py1 - person_h * 0.1   # 往上延伸一點（帽子可能超出 person box）
         region_y2 = py1 + person_h * 0.4
     elif ppe_region == 'torso':
-        # 反光背心：PPE 中心在 person box 中間 50% 範圍內
         region_y1 = py1 + person_h * 0.2
         region_y2 = py1 + person_h * 0.75
     else:
-        # 預設：整個 person box
         region_y1 = py1
         region_y2 = py2
 
     return region_y1 <= ppe_cy <= region_y2
 
 
+# ---------------------------------------------------------------------------
+# 主入口
+# ---------------------------------------------------------------------------
+
 def check_compliance(
     class_info: dict,
     template: dict,
     raw_boxes: dict,
 ) -> dict:
-    """對每個 person 判斷是否合規。
+    """
+    完全依照 compliance_rules 進行合規判斷。
+
+    每條 rule 對應一種人員角色（target），
+    判斷該角色的每個人是否配戴了 required_ppe 裡的所有裝備。
 
     Args:
-        class_info: summarize_detections() 回傳的字典
-        template: load_template() 載入的模板
-        raw_boxes: dict，key 為類別名稱，value 為該類別所有 box 的 list
-                   格式：{'person': [[y1,x1,y2,x2], ...], 'hard hat': [...], ...}
+        class_info : summarize_detections() 回傳的字典
+        template   : load_template() 載入的模板
+        raw_boxes  : dict {cls_name -> list of [y1, x1, y2, x2]}
 
     Returns:
-        compliance_result: dict，結構為：
         {
-            'total_persons': 5,
-            'compliant': 3,
-            'violations': [
+            'rules_results': [          # 每條 rule 一筆
                 {
-                    'person_index': 1,
-                    'position': '畫面右側',
-                    'missing_ppe': ['hard hat'],
+                    'target'         : 'construction worker',
+                    'violation_msg'  : '未完整配戴安全帽與反光背心',
+                    'total_persons'  : 19,
+                    'compliant'      : 14,
+                    'violations'     : [
+                        {'person_index': 2, 'person_box': [...], 'missing_ppe': ['hard hat']},
+                        ...
+                    ],
+                    'compliance_rate': 0.74,
+                    'ppe_stats'      : {'hard hat': 17, 'safety vest': 14},
                 },
                 ...
-            ],
-            'compliance_rate': 0.6,
+            ]
         }
     """
-    rules = template.get('compliance_rules', [])
-    if not rules:
-        return {}
+    rules       = template.get('compliance_rules', [])
+    ppe_aliases = template.get('ppe_aliases', {})
+    rules_results = []
 
-    rule = rules[0]  # 目前只處理第一條規則
-    required_ppe = rule.get('required_ppe', [])
-    ppe_regions = rule.get('ppe_regions', {})
-    ppe_aliases = template.get('ppe_aliases', {})  # 新增：讀取別名
+    for rule in rules:
+        target       = rule.get('target', template.get('person_category', 'person'))
+        required_ppe = rule.get('required_ppe', [])
+        ppe_regions  = rule.get('ppe_regions', {})
+        violation_msg = rule.get('violation_msg', '裝備不符規定')
 
-    person_boxes = raw_boxes.get('person', [])
-    if not person_boxes:
-        return {
-            'total_persons': 0,
-            'compliant': 0,
-            'violations': [],
-            'compliance_rate': 1.0,
-        }
+        person_boxes = raw_boxes.get(target, [])
+        total        = len(person_boxes)
 
-    violations = []
-    compliant_count = 0
-
-    # 初始化 PPE 統計
-    ppe_stats = {ppe_name: 0 for ppe_name in required_ppe}
-
-    for i, person_box in enumerate(person_boxes):
-        missing = []
-        for ppe_name in required_ppe:
-            # 合併主類別名稱 + 所有別名的 box（確保主名稱一定被包含）
-            aliases = ppe_aliases.get(ppe_name, [ppe_name])
-            if ppe_name not in aliases:
-                aliases = [ppe_name] + list(aliases)
-            ppe_boxes = []
-            for alias in aliases:
-                ppe_boxes.extend(raw_boxes.get(alias, []))
-            region = ppe_regions.get(ppe_name, 'body')
-            found = any(
-                _is_ppe_near_person(person_box, pb, region)
-                for pb in ppe_boxes
-            )
-            if found:
-                ppe_stats[ppe_name] += 1
-            else:
-                missing.append(ppe_name)
-
-        if missing:
-            violations.append({
-                'person_index': i + 1,
-                'person_box': list(person_box),
-                'missing_ppe': missing,
+        if total == 0:
+            rules_results.append({
+                'target'         : target,
+                'violation_msg'  : violation_msg,
+                'total_persons'  : 0,
+                'compliant'      : 0,
+                'violations'     : [],
+                'compliance_rate': 1.0,
+                'ppe_stats'      : {ppe: 0 for ppe in required_ppe},
             })
-        else:
-            compliant_count += 1
+            continue
 
-    total = len(person_boxes)
-    return {
-        'total_persons': total,
-        'compliant': compliant_count,
-        'violations': violations,
-        'compliance_rate': compliant_count / total if total > 0 else 1.0,
-        'ppe_stats': ppe_stats,  # 新增：每種 PPE 配戴人數
-    }
+        violations      = []
+        compliant_count = 0
+        ppe_stats       = {ppe: 0 for ppe in required_ppe}
 
+        for i, person_box in enumerate(person_boxes):
+            missing = []
+            for ppe_name in required_ppe:
+                # 合併主名稱 + 別名的所有 box
+                aliases = ppe_aliases.get(ppe_name, [ppe_name])
+                if ppe_name not in aliases:
+                    aliases = [ppe_name] + list(aliases)
+                ppe_boxes = []
+                for alias in aliases:
+                    ppe_boxes.extend(raw_boxes.get(alias, []))
+
+                region = ppe_regions.get(ppe_name, 'body')
+                found  = any(
+                    _is_ppe_near_person(person_box, pb, region)
+                    for pb in ppe_boxes
+                )
+                if found:
+                    ppe_stats[ppe_name] += 1
+                else:
+                    missing.append(ppe_name)
+
+            if missing:
+                violations.append({
+                    'person_index': i + 1,
+                    'person_box'  : list(person_box),
+                    'missing_ppe' : missing,
+                })
+            else:
+                compliant_count += 1
+
+        rules_results.append({
+            'target'         : target,
+            'violation_msg'  : violation_msg,
+            'total_persons'  : total,
+            'compliant'      : compliant_count,
+            'violations'     : violations,
+            'compliance_rate': compliant_count / total,
+            'ppe_stats'      : ppe_stats,
+        })
+
+    return {'rules_results': rules_results}
+
+
+# ---------------------------------------------------------------------------
+# 摘要文字產生
+# ---------------------------------------------------------------------------
 
 def generate_compliance_summary(
     compliance_result: dict,
@@ -170,68 +202,81 @@ def generate_compliance_summary(
     img_h: int = 1,
     img_w: int = 1,
 ) -> str:
-    """產生中文合規稽核摘要。"""
+    """
+    依照每條 compliance_rule 的結果產生稽核摘要。
+    violation_msg 直接從 JSON 讀取，不寫死在程式裡。
+    """
     from demo_utils.audit_report import _position_phrase
 
-    template_name = template.get('name', '工安稽核')
-    lines = []
+    template_name = template.get('name', '影像稽核')
+    rules         = template.get('compliance_rules', [])
+    rules_results = compliance_result.get('rules_results', [])
 
+    # 標題
     intro_parts = []
     if image_name:
         intro_parts.append(f'針對「{image_name}」')
     intro_parts.append(f'使用「{template_name}」模板')
     intro_parts.append('完成影像稽核')
-    lines.append('，'.join(intro_parts) + '，結果如下：')
-    lines.append('')
+    lines = ['，'.join(intro_parts) + '，結果如下：']
 
-    total = compliance_result.get('total_persons', 0)
-    compliant = compliance_result.get('compliant', 0)
-    violations = compliance_result.get('violations', [])
-    rate = compliance_result.get('compliance_rate', 1.0)
-
-    if total == 0:
-        lines.append('本次稽核未偵測到任何人員，無法進行合規判斷。')
-        lines.append('')
-        # 附上物件偵測結果
+    if not rules_results:
+        lines.append('\n未設定合規規則，僅輸出偵測數量。')
         for cls_name, info in class_info.items():
-            if cls_name == 'person':
-                continue
             lines.append(f'偵測到 {info["count"]} 件 {cls_name}。')
         return '\n'.join(lines)
 
-    lines.append(f'共偵測到 {total} 名工作人員，其中：')
-    lines.append(f'  ✅ {compliant} 人 已完整配戴 PPE')
-    lines.append(f'  ❌ {len(violations)} 人 PPE 配戴不符規定')
-    lines.append('')
+    for rule_def, result in zip(rules, rules_results):
+        required_ppe  = rule_def.get('required_ppe', [])
+        violation_msg = result['violation_msg']   # 直接用 JSON 裡的文字
+        total         = result['total_persons']
+        compliant     = result['compliant']
+        violations    = result['violations']
+        rate          = result['compliance_rate']
+        ppe_stats     = result['ppe_stats']
 
-    # PPE 配戴統計
-    ppe_stats = compliance_result.get('ppe_stats', {})
-    rules = template.get('compliance_rules', [])
-    required_ppe = rules[0].get('required_ppe', []) if rules else []
-    if ppe_stats and required_ppe:
-        lines.append('【PPE 配戴統計】')
+        lines.append('')
+        lines.append(f'▌ 檢查對象：{result["target"]}')
+        lines.append('')
+
+        if total == 0:
+            lines.append('  未偵測到此類人員，無法進行合規判斷。')
+            continue
+
+        lines.append(f'  共偵測到 {total} 人，其中：')
+        lines.append('')
+
+        # 第一層：每種 PPE 單獨統計
         for ppe_name in required_ppe:
-            count = ppe_stats.get(ppe_name, 0)
-            lines.append(f'  · {ppe_name}：{count} 人配戴 / {total} 人')
+            count   = ppe_stats.get(ppe_name, 0)
+            missing = total - count
+            icon    = '✅' if missing == 0 else '❌'
+            suffix  = '，全員合規。' if missing == 0 else f'，疑似 {missing} 人未配戴。'
+            lines.append(f'  {icon}  {ppe_name}：{count}/{total} 人配戴{suffix}')
+
+        # 第二層：同時滿足所有 PPE
         lines.append('')
+        ppe_list = '、'.join(required_ppe)
+        lines.append(f'  🔍  同時配戴所有裝備（{ppe_list}）：{compliant}/{total} 人。')
 
-    if violations:
-        lines.append('【違規明細】')
-        for v in violations:
-            box = v['person_box']
-            pos = _position_phrase(box, img_h, img_w)
-            missing_str = '、'.join(v['missing_ppe'])
-            lines.append(f'  · {pos} 的工作人員：缺少 {missing_str}')
+        # 違規明細（violation_msg 來自 JSON）
+        if violations:
+            lines.append('')
+            lines.append(f'  【違規明細】（{violation_msg}）')
+            for v in violations:
+                pos         = _position_phrase(v['person_box'], img_h, img_w)
+                missing_str = '、'.join(v['missing_ppe'])
+                lines.append(f'    · {pos} 的人員：缺少 {missing_str}')
+
+        # 整體評估
         lines.append('')
-
-    rate_pct = rate * 100
-    if rate >= 0.9:
-        assessment = f'合規率 {rate_pct:.0f}%，整體狀況良好。'
-    elif rate >= 0.6:
-        assessment = f'合規率 {rate_pct:.0f}%，請要求違規人員立即補戴 PPE。'
-    else:
-        assessment = f'合規率 {rate_pct:.0f}%，違規情況嚴重，請立即停工整改。'
-
-    lines.append(f'【稽核評估】{assessment}')
+        pct = rate * 100
+        if rate >= 0.9:
+            assessment = f'合規率 {pct:.0f}%，整體狀況良好。'
+        elif rate >= 0.6:
+            assessment = f'合規率 {pct:.0f}%，請要求違規人員立即補戴 PPE。'
+        else:
+            assessment = f'合規率 {pct:.0f}%，違規情況嚴重，請立即停工整改。'
+        lines.append(f'  【稽核評估】{assessment}')
 
     return '\n'.join(lines)
