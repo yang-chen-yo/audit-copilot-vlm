@@ -1,3 +1,59 @@
 {
-  "categories": ["person", "hard hat", "safety vest"]
+  "name": "戶外建築工地工安",
+  "categories": [
+    "construction worker",
+    "hard hat",
+    "safety vest"
+  ],
+  "person_category": "construction worker",
+  "thresholds": {
+    "construction worker": 0.3,
+    "hard hat": 0.4,
+    "safety vest": 0.5
+  },
+  "ppe_aliases": {
+    "construction worker": [
+      "construction worker",
+      "worker",
+      "person standing",
+      "human body",
+      "person"
+    ],
+    "hard hat": [
+      "hard hat",
+      "hardhat",
+      "helmet",
+      "safety helmet",
+      "construction helmet",
+      "hard-hat"
+    ],
+    "safety vest": [
+      "safety vest",
+      "vest",
+      "hi-vis vest",
+      "hi vis vest",
+      "high visibility vest",
+      "reflective vest",
+      "orange vest",
+      "yellow vest",
+      "fluorescent vest",
+      "work vest"
+    ]
+  },
+  "compliance_rules": [
+    {
+      "target": "construction worker",
+      "required_ppe": [
+        "hard hat",
+        "safety vest"
+      ],
+      "ppe_regions": {
+        "hard hat": "head",
+        "safety vest": "torso"
+      },
+      "violation_msg": "未完整配戴安全帽與反光背心"
+    }
+  ],
+  "iou_threshold": 0.1,
+  "vertical_overlap_threshold": 0.1
 }
