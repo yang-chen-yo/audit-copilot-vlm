@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>F-VLM | 智慧影像稽核系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div id="landing-view" class="view active">
+            <h1 class="hero-title">F-VLM</h1>
+            <p class="hero-subtitle">Open-Vocabulary 智慧影像分析與自動化稽核系統</p>
+        </div>
+
+        <div id="workspace-view" class="view hidden">
+            <div class="top-section">
+                <div class="result-image">
+                    <h3>📸 偵測結果圖</h3>
+                    <img src="/static/images/7_result.jpg" alt="等待偵測...">
+                </div>
+                <div class="result-text">
+                    <h3>📝 稽核摘要</h3>
+                    <div class="report-box">
+                        <p id="report-content">等待輸入指令...</p>
+                    </div>
+                </div>
+            </div>
+            <hr>
+        </div>
+
+        <div class="bottom-section">
+            <div class="prompt-area">
+                <div class="input-container">
+                    <div class="file-tag" id="file-tag-container" style="display: none;">
+                        <span class="code-icon">&lt;&gt;</span>
+                        <span class="file-name" id="file-name-display"></span>
+                    </div>
+
+                    <textarea placeholder="請輸入您的稽核指令 (例如：檢查畫面中人員是否佩戴安全帽)"></textarea>
+
+                    <div class="input-actions">
+                        <div class="left-actions">
+                            <label for="file-upload" class="action-btn" style="cursor: pointer; font-size: 28px; font-weight: bold; line-height: 0.8;" title="上傳影像">+</label>
+                            <input type="file" id="file-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <button id="send-btn" class="send-btn">↑</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
