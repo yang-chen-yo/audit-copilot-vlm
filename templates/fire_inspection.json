@@ -1,0 +1,42 @@
+{
+  "name": "室內消防安全巡檢",
+  "categories": [
+    "fire extinguisher",
+    "exit sign"
+  ],
+  "thresholds": {
+    "fire extinguisher": 0.30,
+    "exit sign":         0.30
+  },
+  "ppe_aliases": {
+    "fire extinguisher": [
+      "fire extinguisher",
+      "extinguisher",
+      "red cylinder",
+      "portable fire extinguisher",
+      "fire suppression device"
+    ],
+    "exit sign": [
+      "exit sign",
+      "emergency exit",
+      "exit",
+      "green exit sign",
+      "fire exit sign",
+      "evacuation sign"
+    ]
+  },
+  "compliance_rules": [
+    {
+      "required_objects": [
+        "fire extinguisher",
+        "exit sign"
+      ],
+      "min_count": {
+        "fire extinguisher": 1,
+        "exit sign":         1
+      },
+      "violation_msg": "場域缺少必要消防設備"
+    }
+  ],
+  "iou_threshold": 0.3
+}

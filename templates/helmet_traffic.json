@@ -1,0 +1,47 @@
+{
+  "name": "交通安全騎士安全帽稽查",
+  "categories": [
+    "rider",
+    "helmet"
+  ],
+  "person_category": "rider",
+  "thresholds": {
+    "rider":  0.15,
+    "helmet": 0.65
+  },
+  "ppe_aliases": {
+    "rider": [
+      "rider",
+      "motorcyclist",
+      "motorcycle rider",
+      "person on motorcycle",
+      "biker",
+      "person riding",
+      "person"
+    ],
+    "helmet": [
+      "helmet",
+      "motorcycle helmet",
+      "riding helmet",
+      "safety helmet",
+      "hard hat",
+      "protective helmet",
+      "bike helmet",
+      "crash helmet"
+    ]
+  },
+  "compliance_rules": [
+    {
+      "target": "rider",
+      "required_ppe": [
+        "helmet"
+      ],
+      "ppe_regions": {
+        "helmet": "head"
+      },
+      "violation_msg": "騎士未配戴安全帽"
+    }
+  ],
+  "iou_threshold": 0.15,
+  "vertical_overlap_threshold": 0.1
+}
