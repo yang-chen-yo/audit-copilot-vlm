@@ -1,0 +1,175 @@
+body { 
+    font-family: 'Inter', 'Segoe UI', sans-serif; 
+    background: #f4f4f9; 
+    padding: 20px; 
+    margin: 0;
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 4vh auto; 
+    background: white; 
+    padding: 40px; 
+    border-radius: 16px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+}
+
+/* ==========================================================================
+   2. 狀態切換與首頁 (State & Landing View)
+   ========================================================================== */
+/* 這是給 JavaScript 切換顯示用的 */
+.hidden { display: none !important; }
+.active { display: block; }
+
+#landing-view { 
+    text-align: center; 
+    padding: 100px 0; 
+}
+
+.hero-title { 
+    font-size: 5rem; 
+    /* 使用 AI 質感的漸層綠色 */
+    background: linear-gradient(45deg, #10A37F, #218c74);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0; 
+    font-weight: 800;
+    letter-spacing: -2px;
+}
+
+.hero-subtitle { 
+    font-size: 1.2rem; 
+    color: #7f8c8d; 
+    margin-top: 15px; 
+}
+
+/* ==========================================================================
+   3. 工作區：左圖右文 (Workspace View)
+   ========================================================================== */
+.top-section { 
+    display: flex; 
+    gap: 30px; 
+    height: 450px; 
+}
+
+.result-image { 
+    flex: 6; 
+    border: 2px dashed #e0e0e0; 
+    border-radius: 12px; 
+    padding: 15px; 
+    text-align: center; 
+    background: #fafafa;
+}
+
+.result-image h3, .result-text h3 { margin-top: 0; color: #2c3e50; }
+.result-image img { max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 8px;}
+
+.result-text { flex: 4; display: flex; flex-direction: column; }
+
+.report-box { 
+    background: #1e1e1e; /* 深色報告框，與下方輸入框呼應 */
+    color: #ecf0f1; 
+    padding: 20px; 
+    flex-grow: 1; 
+    border-radius: 12px; 
+    overflow-y: auto; 
+    font-family: 'JetBrains Mono', monospace; /* 報告使用等寬字體更專業 */
+    line-height: 1.6;
+}
+
+hr { border: none; border-top: 1px solid #eee; margin: 30px 0; }
+
+/* ==========================================================================
+   4. 底部輸入區塊 (AI Chat Input)
+   ========================================================================== */
+.bottom-section { display: flex; justify-content: center; }
+.prompt-area { width: 100%; max-width: 800px; display: flex; flex-direction: column; }
+
+/* 深色輸入框容器 */
+.input-container {
+    background: #212121; 
+    border: 1px solid #444;
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+/* 檔案標籤 (上傳檔案後顯示檔名的地方) */
+.file-tag {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    width: fit-content;
+    margin-bottom: 12px;
+    color: #eee;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+}
+.file-tag .plus-icon { margin-right: 6px; font-weight: bold; }
+.file-tag .code-icon { margin-right: 6px; color: #10A37F; } /* 點綴綠色 */
+
+/* 輸入框主體 (修正衝突，限定在 .input-container 內) */
+.input-container textarea {
+    background: transparent;
+    border: none;
+    color: white;
+    width: 100%;
+    height: 60px;
+    resize: none;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.5;
+    font-family: 'Inter', sans-serif;
+}
+.input-container textarea::placeholder { color: #888; }
+
+/* 底部按鈕列 */
+.input-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    color: #aaa;
+}
+
+.left-actions { display: flex; align-items: center; gap: 15px; }
+.action-btn, .settings-btn { cursor: pointer; font-size: 18px; transition: 0.2s; }
+.action-btn:hover, .settings-btn:hover { color: #fff; }
+
+.dropdown-btn { 
+    font-size: 13px; 
+    border: 1px solid #555; 
+    padding: 4px 10px; 
+    border-radius: 6px; 
+    background: #333; 
+    color: #ddd; 
+    cursor: pointer;
+}
+
+/* 發送按鈕 (改成現代 AI 工具常見的圓形按鈕) */
+.send-btn {
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: bold;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.send-btn:hover { 
+    background: #10A37F; 
+    color: white; 
+    transform: translateY(-2px); 
+}
