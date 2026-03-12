@@ -1,0 +1,45 @@
+{
+  "name": "醫療/公共場所口罩稽查",
+  "categories": [
+    "person",
+    "face mask"
+  ],
+  "person_category": "person",
+  "thresholds": {
+    "person":    0.20,
+    "face mask": 0.3
+  },
+  "ppe_aliases": {
+    "person": [
+      "person",
+      "human",
+      "face",
+      "human face",
+      "people"
+    ],
+    "face mask": [
+      "face mask",
+      "mask",
+      "surgical mask",
+      "medical mask",
+      "cloth mask",
+      "mouth mask",
+      "protective mask",
+      "respirator"
+    ]
+  },
+  "compliance_rules": [
+    {
+      "target": "person",
+      "required_ppe": [
+        "face mask"
+      ],
+      "ppe_regions": {
+        "face mask": "head"
+      },
+      "violation_msg": "未配戴口罩"
+    }
+  ],
+  "iou_threshold": 0.15,
+  "vertical_overlap_threshold": 0.1
+}

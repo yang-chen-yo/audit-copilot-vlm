@@ -8,7 +8,7 @@
   "person_category": "construction worker",
   "thresholds": {
     "construction worker": 0.3,
-    "hard hat": 0.4,
+    "hard hat": 0.2,
     "safety vest": 0.5
   },
   "ppe_aliases": {
