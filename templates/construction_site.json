@@ -46,14 +46,5 @@
       "required_ppe": [
         "hard hat",
         "safety vest"
-      ],
-      "ppe_regions": {
-        "hard hat": "head",
-        "safety vest": "torso"
-      },
-      "violation_msg": "未完整配戴安全帽與反光背心"
-    }
-  ],
-  "iou_threshold": 0.1,
-  "vertical_overlap_threshold": 0.1
+    ]
 }

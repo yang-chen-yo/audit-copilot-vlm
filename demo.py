@@ -7,9 +7,14 @@ import numpy as np
 from PIL import Image
 import tensorflow as tf
 import tqdm
+import json
 from utils import clip_utils
 
-_DEMO_IMAGE_NAME = flags.DEFINE_string('demo_image_name', '6.jpg', '圖片檔名。')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))#取得demo資料夾路徑
+OUTPUT_DIR = os.path.join(BASE_DIR, 'static', 'output')
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+_DEMO_IMAGE_NAME = flags.DEFINE_string('demo_image_name', '7.jpg', '圖片檔名。')
 _CATEGORY_NAME_STRING = flags.DEFINE_string('category_name_string', '', '類別清單 (逗號分隔)。')
 _MODEL = flags.DEFINE_enum('model', 'resnet_50x4', ['resnet_50', 'resnet_50x4', 'resnet_50x16'], 'F-VLM 模型。')
 _MAX_BOXES_TO_DRAW = flags.DEFINE_integer('max_boxes_to_draw', 100, '最大繪製框數。')
@@ -69,8 +74,14 @@ def _extract_detections(output, id_mapping, threshold_config):
 
 def main(argv):
     clip_text_fn = clip_utils.get_clip_text_fn(_MODEL.value)
-    demo_image_path = f'./data/{_DEMO_IMAGE_NAME.value}'
-    output_image_path = f'./output/{os.path.splitext(_DEMO_IMAGE_NAME.value)[0]}_{_MODEL.value.replace("resnet_","r")}.jpg'
+    pure_filename = os.path.basename(_DEMO_IMAGE_NAME.value)
+    demo_image_path = os.path.join(BASE_DIR, 'static', 'uploads', _DEMO_IMAGE_NAME.value)
+    file_base_name = os.path.splitext(pure_filename)[0]
+    model_suffix = _MODEL.value.replace("resnet_", "r")
+    output_filename = f"{file_base_name}_{model_suffix}.jpg"
+    output_image_path = os.path.join(OUTPUT_DIR, output_filename)
+
+    print(f"✅ 結果圖片將儲存至: {output_image_path}")
 
     with open(demo_image_path, 'rb') as f:
         np_image = np.array(Image.open(f))
@@ -80,7 +91,20 @@ def main(argv):
     tmpl = {}
     if _TEMPLATE.value:
         from demo_utils import compliance_checker
-        tmpl = compliance_checker.load_template(_TEMPLATE.value)
+        is_path = _TEMPLATE.value.endswith('.json') or '/' in _TEMPLATE.value
+        
+        if is_path:
+            # 這是從 translate.py 產生的動態路徑
+            if os.path.exists(_TEMPLATE.value):
+                with open(_TEMPLATE.value, 'r', encoding='utf-8') as f:
+                    tmpl = json.load(f)
+                print(f"成功載入動態指令檔案: {_TEMPLATE.value}")
+            else:
+                print(f"找不到路徑檔案: {_TEMPLATE.value}")
+        else:
+            # 這是原本內建的模板名稱 (例如 'construction_site')
+            tmpl = compliance_checker.load_template(_TEMPLATE.value)
+            print(f"✅ 成功載入內建模板: {_TEMPLATE.value}")
         categories       = tmpl.get('categories', [])
         person_category  = tmpl.get('person_category', None)
         threshold_config = tmpl.get('thresholds', {})
@@ -88,8 +112,15 @@ def main(argv):
     else:
         categories = _CATEGORY_NAME_STRING.value.split(',')
 
-    model = tf.saved_model.load(f'./checkpoints/{_MODEL.value.replace("resnet_","r")}')
-    embed_path = f'./data/{_MODEL.value.replace("resnet_", "r")}_bg_empty_embed.npy'
+    model_sub_path = _MODEL.value.replace("resnet_", "r")
+    model_full_path = os.path.join(BASE_DIR, 'checkpoints', model_sub_path)
+
+    print(f"正在從絕對路徑載入模型: {model_full_path}")
+    model = tf.saved_model.load(model_full_path)
+    embed_filename = f'{model_sub_path}_bg_empty_embed.npy'
+    embed_path = os.path.join(BASE_DIR, 'data', embed_filename)
+
+    print(f"正在載入 Embedding 檔案: {embed_path}")
 
     # 2. 執行拆分推論以解決重疊物件的語義競爭
     use_split = (person_category in categories and len(categories) > 1)
@@ -189,4 +220,3 @@ def main(argv):
 
 if __name__ == '__main__':
     app.run(main)
-

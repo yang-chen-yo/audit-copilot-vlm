@@ -3,7 +3,7 @@ import json
 import datetime as datetime
 import os
 
-API_KEY = "AIzaSyDiplXst3rS29AP5jsjBm4ONPrbU8vOFQ8" 
+API_KEY = "AIzaSyDdjBpnxsv2WbPOrtJgLvtH2EytPs2eayw" 
 genai.configure(api_key=API_KEY)
 
 generation_config = {
@@ -23,7 +23,7 @@ model = genai.GenerativeModel(
 import os
 import json
 
-def translate_to_vlm_prompt(zh_text):
+def translate_to_vlm_prompt(zh_text, output_filename):
     """將中文轉換為 VLM 專用的英文 Prompt"""
     strict_prompt = f"OUTPUT ONLY THE ENGLISH TEXT, NOTHING ELSE: {zh_text}"
     try:
@@ -38,11 +38,11 @@ def translate_to_vlm_prompt(zh_text):
             clean_text = translated_text.replace("```json", "").replace("```", "").strip()
             parsed_list = json.loads(clean_text)
         
-        target_dir = "test_records" 
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        target_dir = os.path.join(current_file_dir, "..", "templates")
         os.makedirs(target_dir, exist_ok=True)
-        save_path = os.path.join(target_dir, "result.json")
+        save_path = os.path.join(target_dir, output_filename) 
         print(f"檔案確實寫入至：{save_path}")
-        # 最精簡的 JSON 輸出：直接覆蓋/寫入到同一個 result.json 檔案
         with open(save_path, "w", encoding="utf-8") as f:
             json.dump({"categories": parsed_list}, f, ensure_ascii=False, indent=4)
 
@@ -54,11 +54,10 @@ def translate_to_vlm_prompt(zh_text):
 
 # --- 測試區塊 ---
 if __name__ == "__main__":
-    test_labels = [
-        "幫我檢查誰沒有戴安全帽", 
-    ]
-    
-    for zh in test_labels:
-        en = translate_to_vlm_prompt(zh)
-        print(f"中: {zh}")
-        print(f"英: {en}\n")
+    import sys
+    # sys.argv[1] 是第一個參數 (中文內容)
+    # sys.argv[2] 是產出的檔名
+    if len(sys.argv) >= 3:
+        translate_to_vlm_prompt(sys.argv[1], sys.argv[2])
+    else:
+        print("❌ 參數不足！請輸入：python translate.py '中文指令' '檔名.json'")
