@@ -76,16 +76,26 @@ def handle_process():
         current_model = data.get('model', 'resnet_50x4')
         model_suffix = current_model.replace("resnet_", "r")
         output_image_url = f"/media/output/{file_base_name}_{model_suffix}.jpg"
+
+        summary_filename = f"{file_base_name}_{model_suffix}_summary.txt"
+        summary_path = os.path.join(ROOT_DIR, 'static', 'output', summary_filename)
+        audit_summary = ""
+        if os.path.exists(summary_path):
+            with open(summary_path, 'r', encoding='utf-8') as f:
+                audit_summary = f.read()
+        else:
+            audit_summary = "無法讀取稽核摘要檔案。"
         
         return jsonify({
             'status': 'success',
             'message': '稽核完成',
             'file': temp_json_name,
-            'output_url': output_image_url
+            'output_url': output_image_url,
+            'summary': audit_summary
         })
 
     except subprocess.CalledProcessError as e:
-        print(f"❌ 腳本執行出錯，錯誤碼: {e.returncode}")
+        print(f"腳本執行出錯，錯誤碼: {e.returncode}")
         return jsonify({'status': 'error', 'message': f'執行失敗，代碼: {e.returncode}'}), 500
 
 @app.route('/')

@@ -29,7 +29,7 @@ sendBtn.addEventListener('click', async function() {
     landingView.classList.add('hidden');
     workspaceView.classList.remove('hidden');
     workspaceView.classList.add('active');
-    reportContent.innerHTML = '<div class="loading">AI 正在思考並翻譯中...</div>';
+    reportContent.innerHTML = '<div class="loading">正在思考中...</div>';
 
     try {
         // --- 步驟 A: 上傳圖片 ---
@@ -63,10 +63,10 @@ sendBtn.addEventListener('click', async function() {
 
         if (result.status === 'success') {
             reportContent.innerHTML = `
-                <h3>✅ 分析完成</h3>
-                <p>偵測目標：${userInput}</p>
-                <p>使用的暫存檔：${result.file}</p>
-            `;
+                <div style="white-space: pre-wrap; line-height: 1.6;">
+                ${result.summary}
+                </div>
+                `;
             const resultImg = document.getElementById('result-img');
             if (resultImg) {
                 // 加上 ?t=時間戳記 是為了防止瀏覽器快取 (Cache)，確保永遠顯示最新生成的圖片
@@ -74,11 +74,11 @@ sendBtn.addEventListener('click', async function() {
                 resultImg.alt = "稽核完成的結果圖";
             }
         } else {
-            reportContent.innerHTML = `❌ 發生錯誤：${result.message}`;
+            reportContent.innerHTML = `發生錯誤：${result.message}`;
         }
 
     } catch (error) {
         console.error("Error:", error);
-        reportContent.innerHTML = "⚠️ 處理失敗: " + error.message;
+        reportContent.innerHTML = "處理失敗: " + error.message;
     }
 });

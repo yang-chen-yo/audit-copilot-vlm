@@ -1,17 +1,22 @@
 body { 
     font-family: 'Inter', 'Segoe UI', sans-serif; 
     background: #f4f4f9; 
+    color: #333; 
     padding: 20px; 
     margin: 0;
+    min-height: 100vh;
 }
 
 .container { 
     max-width: 1000px; 
     margin: 4vh auto; 
-    background: white; 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+    color: #f8fafc; 
+    
     padding: 40px; 
     border-radius: 16px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); 
+    border: 1px solid #334155; 
 }
 
 /* ==========================================================================
@@ -21,26 +26,70 @@ body {
 .hidden { display: none !important; }
 .active { display: block; }
 
+/* --- 新增：定義滑入與淡入動畫 --- */
+@keyframes slideFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px); /* 從下方 30px 處往上滑 */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- 替換：新的 Landing View 容器設定 --- */
 #landing-view { 
     text-align: center; 
-    padding: 100px 0; 
+    padding: 120px 0; /* 稍微增加上下間距讓畫面更大氣 */
+    position: relative;
 }
 
-.hero-title { 
+.vlm-badge-dark {
+    display: inline-block;
+    padding: 6px 20px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    
+    /* 動畫設定：0.8秒完成，延遲0.1秒開始，forwards停留在最後狀態 */
+    opacity: 0;
+    animation: slideFadeIn 0.8s 0.1s forwards;
+}
+
+.vlm-title-dark { 
     font-size: 5rem; 
-    /* 使用 AI 質感的漸層綠色 */
-    background: linear-gradient(45deg, #10A37F, #218c74);
+    font-weight: 900;
+    margin: 0; 
+    background: linear-gradient(135deg, #10A37F 0%, #059669 100%); 
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin: 0; 
-    font-weight: 800;
-    letter-spacing: -2px;
+    letter-spacing: 2px;
+    
+    /* 🔥 新增：使用 drop-shadow 做出完美的光暈陰影 */
+    /* 參數：X軸偏移、Y軸偏移、模糊程度、顏色 (這裡用半透明的科技綠) */
+    filter: drop-shadow(0px 8px 16px rgba(16, 163, 127, 0.4));
+    
+    opacity: 0;
+    animation: slideFadeIn 1s 0.3s forwards;
 }
 
-.hero-subtitle { 
-    font-size: 1.2rem; 
-    color: #7f8c8d; 
+/* --- 替換：原本的 .hero-subtitle 改成 .vlm-subtitle-dark --- */
+.vlm-subtitle-dark { 
+    font-size: 1.3rem; 
+    color: #94a3b8; /* 搭配深色背景的淺灰藍色 */
     margin-top: 15px; 
+    font-weight: 400;
+    letter-spacing: 1px;
+    
+    /* 動畫設定：延遲0.6秒開始，最後進場 */
+    opacity: 0;
+    animation: slideFadeIn 1s 0.6s forwards;
 }
 
 /* ==========================================================================
@@ -48,36 +97,97 @@ body {
    ========================================================================== */
 .top-section { 
     display: flex; 
-    gap: 30px; 
-    height: 450px; 
+    gap: 24px; /* 稍微縮小間距，讓畫面更緊湊精緻 */
+    height: 480px; /* 稍微拉高，讓報告有更多空間顯示 */
 }
 
+/* --- 左側：影像偵測面板 --- */
 .result-image { 
     flex: 6; 
-    border: 2px dashed #e0e0e0; 
+    /* 玻璃感深色面板 */
+    background: rgba(0, 0, 0, 0.25); 
+    border: 1px solid rgba(52, 211, 153, 0.3); /* 邊框帶一點科技綠 */
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2); /* 內陰影增加深度 */
     border-radius: 12px; 
-    padding: 15px; 
-    text-align: center; 
-    background: #fafafa;
-}
-
-.result-image h3, .result-text h3 { margin-top: 0; color: #2c3e50; }
-.result-image img { max-width: 100%; max-height: 380px; object-fit: contain; border-radius: 8px;}
-
-.result-text { flex: 4; display: flex; flex-direction: column; }
-
-.report-box { 
-    background: #1e1e1e; /* 深色報告框，與下方輸入框呼應 */
-    color: #ecf0f1; 
     padding: 20px; 
-    flex-grow: 1; 
-    border-radius: 12px; 
-    overflow-y: auto; 
-    font-family: 'JetBrains Mono', monospace; /* 報告使用等寬字體更專業 */
-    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
 }
 
-hr { border: none; border-top: 1px solid #eee; margin: 30px 0; }
+.result-image h3 { 
+    margin: 0 0 15px 0; 
+    color: #ffffff; /* 標題用亮綠色點綴 */
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(52, 211, 153, 0.2);
+    padding-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.result-image img { 
+    width: 100%; 
+    height: 100%; /* 填滿剩餘空間 */
+    object-fit: contain; 
+    border-radius: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 滑鼠移到圖片上時的精緻浮出效果 */
+.result-image img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+
+/* --- 右側：稽核摘要面板 --- */
+.result-text { 
+    flex: 4; 
+    display: flex; 
+    flex-direction: column; 
+    background: rgba(255, 255, 255, 0.03); /* 比左邊稍微亮一點點的層次 */
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 12px; 
+    padding: 20px; 
+}
+
+.result-text h3 { 
+    margin: 0 0 15px 0; 
+    color: #e2e8f0; 
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+/* 報告文字區塊 (終端機風格) */
+.report-box { 
+    background: rgba(0, 0, 0, 0.4); /* 深黑底色 */
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    color: #fbfbfb; 
+    padding: 16px; 
+    flex-grow: 1; 
+    border-radius: 8px;     
+    overflow-y: auto; 
+    font-family: 'JetBrains Mono', Consolas, monospace; 
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+
+/* 🚀 客製化報告區塊的捲軸 (Webkit 瀏覽器適用) */
+.report-box::-webkit-scrollbar {
+    width: 6px;
+}
+.report-box::-webkit-scrollbar-track {
+    background: transparent; 
+}
+.report-box::-webkit-scrollbar-thumb {
+    background: rgba(52, 211, 153, 0.4);
+    border-radius: 10px;
+}
+.report-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(52, 211, 153, 0.8); 
+}
 
 /* ==========================================================================
    4. 底部輸入區塊 (AI Chat Input)
@@ -85,16 +195,34 @@ hr { border: none; border-top: 1px solid #eee; margin: 30px 0; }
 .bottom-section { display: flex; justify-content: center; }
 .prompt-area { width: 100%; max-width: 800px; display: flex; flex-direction: column; }
 
-/* 深色輸入框容器 */
 .input-container {
-    background: #212121; 
-    border: 1px solid #444;
+    background: rgba(33, 33, 33, 0.8); /* 加一點透明度融入背景 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃質感 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 16px;
     position: relative;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    
+    opacity: 0;
+    animation: slideFadeIn 1s 0.9s forwards;
+    
+
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.input-container:hover {
+    border-color: rgba(52, 211, 153, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.input-container:focus-within {
+    border-color: #10A37F; 
+    box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.2), 0 15px 35px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+    background: rgba(25, 25, 25, 0.95); 
 }
 
 /* 檔案標籤 (上傳檔案後顯示檔名的地方) */
@@ -114,7 +242,7 @@ hr { border: none; border-top: 1px solid #eee; margin: 30px 0; }
 .file-tag .plus-icon { margin-right: 6px; font-weight: bold; }
 .file-tag .code-icon { margin-right: 6px; color: #10A37F; } /* 點綴綠色 */
 
-/* 輸入框主體 (修正衝突，限定在 .input-container 內) */
+
 .input-container textarea {
     background: transparent;
     border: none;
