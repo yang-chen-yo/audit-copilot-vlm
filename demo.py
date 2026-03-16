@@ -217,6 +217,11 @@ def main(argv):
             class_info, _DEMO_IMAGE_NAME.value)
 
     print(f"\n{'='*50}\n{summary}\n{'='*50}")
+    summary_filename = f"{file_base_name}_{model_suffix}_summary.txt"
+    summary_path = os.path.join(OUTPUT_DIR, summary_filename)
+    with open(summary_path, 'w', encoding='utf-8') as f:
+        f.write(summary)
+    print(f"✅ 稽核報告已儲存至: {summary_path}")
 
 if __name__ == '__main__':
     app.run(main)

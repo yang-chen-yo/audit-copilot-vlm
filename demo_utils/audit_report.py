@@ -116,8 +116,6 @@ def generate_natural_summary(
 
     # 開頭
     intro_parts = []
-    if image_name:
-        intro_parts.append(f'針對「{image_name}」')
     if template_name:
         intro_parts.append(f'使用「{template_name}」模板')
     intro_parts.append('完成影像稽核')

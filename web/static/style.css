@@ -30,7 +30,7 @@ body {
 @keyframes slideFadeIn {
     from {
         opacity: 0;
-        transform: translateY(30px); /* 從下方 30px 處往上滑 */
+        transform: translateY(30px); 
     }
     to {
         opacity: 1;
@@ -41,7 +41,7 @@ body {
 /* --- 替換：新的 Landing View 容器設定 --- */
 #landing-view { 
     text-align: center; 
-    padding: 120px 0; /* 稍微增加上下間距讓畫面更大氣 */
+    padding: 120px 0; 
     position: relative;
 }
 
@@ -56,8 +56,6 @@ body {
     font-weight: 600;
     letter-spacing: 2px;
     margin-bottom: 1.5rem;
-    
-    /* 動畫設定：0.8秒完成，延遲0.1秒開始，forwards停留在最後狀態 */
     opacity: 0;
     animation: slideFadeIn 0.8s 0.1s forwards;
 }
@@ -70,24 +68,22 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 2px;
-    
-    /* 🔥 新增：使用 drop-shadow 做出完美的光暈陰影 */
-    /* 參數：X軸偏移、Y軸偏移、模糊程度、顏色 (這裡用半透明的科技綠) */
+
+
     filter: drop-shadow(0px 8px 16px rgba(16, 163, 127, 0.4));
     
     opacity: 0;
     animation: slideFadeIn 1s 0.3s forwards;
 }
 
-/* --- 替換：原本的 .hero-subtitle 改成 .vlm-subtitle-dark --- */
+
 .vlm-subtitle-dark { 
     font-size: 1.3rem; 
-    color: #94a3b8; /* 搭配深色背景的淺灰藍色 */
+    color: #94a3b8; 
     margin-top: 15px; 
     font-weight: 400;
     letter-spacing: 1px;
     
-    /* 動畫設定：延遲0.6秒開始，最後進場 */
     opacity: 0;
     animation: slideFadeIn 1s 0.6s forwards;
 }
@@ -97,17 +93,16 @@ body {
    ========================================================================== */
 .top-section { 
     display: flex; 
-    gap: 24px; /* 稍微縮小間距，讓畫面更緊湊精緻 */
-    height: 480px; /* 稍微拉高，讓報告有更多空間顯示 */
+    gap: 24px;
+    height: 480px; 
 }
 
-/* --- 左側：影像偵測面板 --- */
+
 .result-image { 
     flex: 6; 
-    /* 玻璃感深色面板 */
     background: rgba(0, 0, 0, 0.25); 
-    border: 1px solid rgba(52, 211, 153, 0.3); /* 邊框帶一點科技綠 */
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2); /* 內陰影增加深度 */
+    border: 1px solid rgba(52, 211, 153, 0.3); 
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2); 
     border-radius: 12px; 
     padding: 20px; 
     display: flex;
@@ -116,7 +111,7 @@ body {
 
 .result-image h3 { 
     margin: 0 0 15px 0; 
-    color: #ffffff; /* 標題用亮綠色點綴 */
+    color: #ffffff; 
     font-size: 1.1rem;
     font-weight: 600;
     border-bottom: 1px solid rgba(52, 211, 153, 0.2);
@@ -126,25 +121,24 @@ body {
 
 .result-image img { 
     width: 100%; 
-    height: 100%; /* 填滿剩餘空間 */
+    height: 100%; 
     object-fit: contain; 
     border-radius: 8px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* 滑鼠移到圖片上時的精緻浮出效果 */
+
 .result-image img:hover {
     transform: scale(1.02);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 
-/* --- 右側：稽核摘要面板 --- */
 .result-text { 
     flex: 4; 
     display: flex; 
     flex-direction: column; 
-    background: rgba(255, 255, 255, 0.03); /* 比左邊稍微亮一點點的層次 */
+    background: rgba(255, 255, 255, 0.03); 
     border: 1px solid rgba(52, 211, 153, 0.3);
     border-radius: 12px; 
     padding: 20px; 
@@ -160,9 +154,9 @@ body {
     letter-spacing: 1px;
 }
 
-/* 報告文字區塊 (終端機風格) */
+
 .report-box { 
-    background: rgba(0, 0, 0, 0.4); /* 深黑底色 */
+    background: rgba(0, 0, 0, 0.4); 
     border: 1px solid rgba(0, 0, 0, 0.5);
     color: #fbfbfb; 
     padding: 16px; 
@@ -174,7 +168,7 @@ body {
     font-size: 0.95rem;
 }
 
-/* 🚀 客製化報告區塊的捲軸 (Webkit 瀏覽器適用) */
+
 .report-box::-webkit-scrollbar {
     width: 6px;
 }
@@ -196,8 +190,8 @@ body {
 .prompt-area { width: 100%; max-width: 800px; display: flex; flex-direction: column; }
 
 .input-container {
-    background: rgba(33, 33, 33, 0.8); /* 加一點透明度融入背景 */
-    backdrop-filter: blur(10px); /* 磨砂玻璃質感 */
+    background: rgba(33, 33, 33, 0.8); 
+    backdrop-filter: blur(10px); 
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 16px;
@@ -240,7 +234,7 @@ body {
     font-family: 'JetBrains Mono', monospace;
 }
 .file-tag .plus-icon { margin-right: 6px; font-weight: bold; }
-.file-tag .code-icon { margin-right: 6px; color: #10A37F; } /* 點綴綠色 */
+.file-tag .code-icon { margin-right: 6px; color: #10A37F; } 
 
 
 .input-container textarea {
