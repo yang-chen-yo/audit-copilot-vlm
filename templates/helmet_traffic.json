@@ -6,8 +6,8 @@
   ],
   "person_category": "rider",
   "thresholds": {
-    "rider":  0.15,
-    "helmet": 0.65
+    "rider":  0.25,
+    "helmet": 0.4
   },
   "ppe_aliases": {
     "rider": [
