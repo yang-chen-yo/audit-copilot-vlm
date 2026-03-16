@@ -84,7 +84,7 @@ def main(argv):
     print(f"✅ 結果圖片將儲存至: {output_image_path}")
 
     with open(demo_image_path, 'rb') as f:
-        np_image = np.array(Image.open(f))
+        np_image = np.array(Image.open(f).convert('RGB'))
 
     # 1. 讀取模板與門檻配置
     categories, person_category, threshold_config, alias_map = [], None, {}, {}

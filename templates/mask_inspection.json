@@ -6,7 +6,7 @@
   ],
   "person_category": "person",
   "thresholds": {
-    "person":    0.20,
+    "person":    0.1,
     "face mask": 0.3
   },
   "ppe_aliases": {
