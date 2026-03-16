@@ -1,0 +1,22 @@
+{
+    "categories": [
+        "person",
+        "hard hat",
+        "safety vest"
+    ],
+    "person_category": "person",
+    "thresholds": {
+        "person": 0.3,
+        "hard hat": 0.2,
+        "safety vest": 0.5
+    },
+    "compliance_rules": [
+        {
+            "target": "person",
+            "required_ppe": [
+                "hard hat",
+                "safety vest"
+            ]
+        }
+    ]
+}
